@@ -3,17 +3,22 @@ import { Fleur_De_Leah } from "next/font/google";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useUserContext } from "@/context/UserContext";
-import { getUserFromToken, miniText } from "@/lib/utils";
+import { getUserFromToken, isMobile, miniText } from "@/lib/utils";
 import Image from "next/image";
 import {
   BiCheck,
-  BiCollapse,
+  BiChevronRight,
   BiLogOut,
   BiMenu,
+  BiPlus,
   BiUser,
   BiX,
 } from "react-icons/bi";
 import AreYouSurePrompt from "./modals/AreYouSurePrompt";
+import { TbLayoutSidebarLeftCollapseFilled, TbLayoutSidebarRightCollapseFilled } from "react-icons/tb";
+import { useRouter } from "next/navigation";
+import { months } from "@/constants";
+import { HiDotsVertical } from "react-icons/hi";
 
 const font = Fleur_De_Leah({ subsets: ["latin"], weight: "400" });
 
@@ -28,15 +33,21 @@ type Habit = {
 };
 
 const SideBar = () => {
+  const [collapsed, setCollapsed] = useState(false);
   const [profilePrompt, setProfilePrompt] = useState(false);
   const [logoutPrompt, setLogoutPrompt] = useState(false);
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [expandedHabits, setExpandedHabits] = useState<Record<string, boolean>>({});
   const { user, logout } = useUserContext();
+  const router = useRouter();
 
-  const currentMonth = new Date().getMonth() + 1;
   const currentYear = new Date().getFullYear();
 
   useEffect(() => {
+    if (isMobile()) {
+      setCollapsed(true);
+    }
+
     const fetchHabits = async () => {
       const user = getUserFromToken();
       if (!user) return;
@@ -54,63 +65,22 @@ const SideBar = () => {
     fetchHabits();
   }, []);
 
+  const getMonthData = (habit: Habit, year: number, month: number) => {
+    const monthDates = habit.dates.filter(
+      (d) => d.date.year === year && d.date.month === month
+    );
+    const doneCount = monthDates.filter((d) => d.status === "done").length;
+    const undoneCount = monthDates.filter((d) => d.status === "undone").length;
+    return { doneCount, undoneCount };
+  };
+
   return (
     <>
-      <AnimatePresence>
-        {logoutPrompt && (
-          <AreYouSurePrompt
-            title="Are you sure to logout?"
-            onClose={() => setLogoutPrompt(false)}
-            onDelete={logout}
-          />
-        )}
-      </AnimatePresence>
-
-      {/* profile detail in <mobile */}
-      <AnimatePresence>
-        {profilePrompt && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="z-15 fixed top-0 left-0 w-full h-full bg-black/50 flex-center rounded-lg"
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.9, opacity: 0 }}
-              className="flex items-start gap-3"
-            >
-              <div className="flex gap-3 items-center justify-between p-3 bg-white rounded-lg">
-                <div>
-                  <p className={`text-[2em] ${font.className}`}>{user?.name}</p>
-                  <p className="text-sm font-normal">{user?.email}</p>
-                </div>
-                <div className="relative">
-                  <div
-                    className="hover:bg-gray-500/5 p-2 rounded-lg cursor-pointer flex-center transition"
-                    onClick={() => setLogoutPrompt(!logoutPrompt)}
-                  >
-                    <BiLogOut className="text-2xl" />
-                  </div>
-                </div>
-              </div>
-              <button
-                className="bg-white p-1 rounded-xl flex-center"
-                onClick={() => setProfilePrompt(false)}
-              >
-                <BiX className="text-2xl" />
-              </button>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <div className="relative flex flex-col justify-between w-68 md:h-full">
+      <div className={`${collapsed ? "w-14" : "w-68"} relative flex flex-col justify-between gap-3 py-2 md:h-full transition-all duration-300 ease-in-out`}>
         {/* logo and collapse */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-white rounded-2xl shadow-2xl">
-          <div className="flex items-center gap-2">
-            <Link href="/">
+        <div className={`flex ${collapsed ? "flex-col justify-center" : "flex-row items-center"}  justify-between gap-3 px-3 py-2 bg-white rounded-2xl shadow-2xl`}>
+          <div className="flex items-center">
+            <Link href="/" className="shrink-0">
               <Image
                 src="/logo.png"
                 alt="CalHabit Logo"
@@ -119,63 +89,171 @@ const SideBar = () => {
                 className="h-9 w-auto"
               />
             </Link>
-            CalHabit
+            <AnimatePresence>
+              {!collapsed && (
+                <motion.span
+                  className="ml-2"
+                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                >
+                  CalHabit
+                </motion.span>
+              )}
+            </AnimatePresence>
           </div>
 
-          <button className="flex-center size-7 rounded-md p-1 bg-gray-500/5 hover:bg-gray-500/10 transition-all cursor-pointer">
-            <BiCollapse size={18} />
+          <button className="flex-center size-7 rounded-md p-1 bg-gray-500/5 hover:bg-gray-500/10 transition-all cursor-pointer" onClick={() => setCollapsed((prev) => !prev)}>
+            {collapsed ? (
+              <TbLayoutSidebarRightCollapseFilled size={18} />
+            ) : (
+              <TbLayoutSidebarLeftCollapseFilled size={18} />
+            )}
           </button>
         </div>
-        <div className="mt-5 px-3 py-2 bg-white rounded-2xl shadow-2xl">
-          {/* middle: habit summary */}
-          {habits && habits.length > 0 && (
-            <div className="hidden md:flex flex-col gap-1.5 overflow-y-auto py-3 px-1">
-              {habits.map((habit) => {
-                const monthDates = habit.dates.filter(
-                  (d) =>
-                    d.date.year === currentYear &&
-                    d.date.month === currentMonth,
-                );
-                const doneCount = monthDates.filter(
-                  (d) => d.status === "done",
-                ).length;
-                const undoneCount = monthDates.filter(
-                  (d) => d.status === "undone",
-                ).length;
 
-                const displayName =
-                  habit.habit_name.length > 30
-                    ? habit.habit_name.slice(0, 30) + "…"
-                    : habit.habit_name;
+        <div className="shrink-0 p-3 bg-white rounded-2xl shadow-2xl flex-1 overflow-hidden">
+          <button
+            className="flex-center w-full rounded-full p-2 text-sm bg-gradient-to-r from-color-primary via-color-secondary to-color-tertiary text-white transition-all cursor-pointer hover:opacity-90"
+          >
+            <BiPlus size={20} /> {collapsed ? "" : "Add New Habit"}
+          </button>
+
+          {/* title */}
+          {!collapsed && (
+            <AnimatePresence>
+              <motion.h2
+                className="px-2 pt-2 text-lg font-semibold text-gray-600"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              >
+                Habits
+              </motion.h2>
+            </AnimatePresence>
+          )}
+
+          {/* middle: habit summary */}
+          {!collapsed && habits && habits.length > 0 && (
+            <div className="hidden md:flex flex-col gap-3 overflow-y-auto h-full py-3 px-1">
+              {habits.map((habit) => {
+                const displayName = miniText(20, habit.habit_name);
+                const isExpanded = expandedHabits[habit._id];
+
+                const visibleMonths = months
+                  .map((monthName, monthIndex) => {
+                    const { doneCount, undoneCount } = getMonthData(
+                      habit,
+                      currentYear,
+                      monthIndex + 1
+                    );
+                    if (doneCount === 0 && undoneCount === 0) return null;
+                    return { monthName, monthIndex, doneCount, undoneCount };
+                  })
+                  .filter(Boolean) as {
+                    monthName: string;
+                    monthIndex: number;
+                    doneCount: number;
+                    undoneCount: number;
+                  }[];
+
+                const showToggle = visibleMonths.length > 3;
+                const displayedMonths = isExpanded
+                  ? visibleMonths
+                  : visibleMonths.slice(0, 3);
 
                 return (
-                  <Link
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
                     key={habit._id}
-                    href={`/habits/${habit._id}`}
-                    className="group flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-gray-500/10 hover:bg-gray-500/20 transition-all"
+                    className="flex flex-col gap-2 p-3 rounded-xl bg-gray-500/5"
                   >
-                    <p className="font-semibold text-sm text-gray-800 group-hover:text-gray-900 transition leading-none">
-                      {displayName}
-                    </p>
-                    <div className="flex items-center gap-2 shrink-0">
-                      <div className="flex items-center gap-1">
-                        <span className="flex-center size-4 rounded-full bg-green-100 text-green-600">
-                          <BiCheck size={10} />
-                        </span>
-                        <span className="text-xs font-semibold text-green-600">
-                          {doneCount}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <span className="flex-center size-4 rounded-full bg-red-100 text-red-500">
-                          <BiX size={10} />
-                        </span>
-                        <span className="text-xs font-semibold text-red-500">
-                          {undoneCount}
-                        </span>
-                      </div>
+                    {/* Title with arrow */}
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="font-semibold text-sm text-gray-800 leading-none">
+                        {displayName}
+                      </p>
+                      <button
+                        onClick={() => router.push(`/habits/${habit._id}`)}
+                        className="flex-center size-6 rounded-md hover:bg-gray-500/20 transition-all shrink-0 cursor-pointer"
+                      >
+                        <BiChevronRight size={18} className="text-gray-600" />
+                      </button>
                     </div>
-                  </Link>
+
+                    {/* Year */}
+                    <p className="text-xs font-semibold text-gray-600">
+                      {currentYear}
+                    </p>
+
+                    {/* Months with counts */}
+                    <div className="flex flex-col gap-1.5">
+                      <div className="relative">
+                        <div className="flex flex-col gap-1.5">
+                          {displayedMonths.map(
+                            ({ monthName, monthIndex, doneCount, undoneCount }) => (
+                              <div
+                                key={monthIndex}
+                                className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-white/50"
+                              >
+                                <span className="text-xs font-medium text-gray-700">
+                                  {monthName.slice(0, 3)}
+                                </span>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <div className="flex items-center gap-1">
+                                    <span className="flex-center size-4 rounded-full bg-green-100 text-green-600">
+                                      <BiCheck size={10} />
+                                    </span>
+                                    <span className="text-xs font-semibold text-green-600">
+                                      {doneCount}
+                                    </span>
+                                  </div>
+                                  <div className="flex items-center gap-1">
+                                    <span className="flex-center size-4 rounded-full bg-red-100 text-red-500">
+                                      <BiX size={10} />
+                                    </span>
+                                    <span className="text-xs font-semibold text-red-500">
+                                      {undoneCount}
+                                    </span>
+                                  </div>
+                                </div>
+                              </div>
+                            )
+                          )}
+                        </div>
+
+                        {/* Gradient fade + Show more */}
+                        {showToggle && !isExpanded && (
+                          <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-100 to-transparent rounded-b-lg flex items-end justify-center pb-1">
+                            <button
+                              onClick={() =>
+                                setExpandedHabits((prev) => ({
+                                  ...prev,
+                                  [habit._id]: true,
+                                }))
+                              }
+                              className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                            >
+                              Show more
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Show less */}
+                      {showToggle && isExpanded && (
+                        <button
+                          onClick={() =>
+                            setExpandedHabits((prev) => ({
+                              ...prev,
+                              [habit._id]: false,
+                            }))
+                          }
+                          className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 transition-colors mt-0.5 cursor-pointer"
+                        >
+                          Show less
+                        </button>
+                      )}
+                    </div>
+                  </motion.div>
                 );
               })}
             </div>
@@ -183,21 +261,28 @@ const SideBar = () => {
         </div>
 
         {/* footer profile */}
-        <div className="mt-auto flex items-center justify-between gap-2 px-3 py-2 bg-white rounded-2xl shadow-2xl">
-          <div className="flex items-center gap-2">
-            <div className="flex-center size-10 rounded-full bg-gray-100 border border-gray-900">
-              <BiUser size={24} />
-            </div>
-            <div>
-              <p className={`text-md`}>{miniText(10, user?.name)}</p>
-              <p className="text-sm font-normal text-gray-500">
-                {miniText(10, user?.email)}
-              </p>
-            </div>
-          </div>
+        <div
+          className="mt-auto flex items-center justify-between gap-2 px-3 py-2 bg-white rounded-2xl shadow-2xl"
 
-          <div className="flex-center size-7 rounded-md p-1 bg-gray-500/5 hover:bg-gray-500/10 transition-all cursor-pointer">
-            <BiMenu size={20} />
+        >
+          <AnimatePresence>
+            {!collapsed && (
+              <div className="flex items-center gap-2">
+                <button className="flex-center size-8 rounded-full bg-gray-500/20">
+                  <BiUser size={20} />
+                </button>
+                <div>
+                  <p className={``}>{miniText(12, user?.name)}</p>
+                  <p className="text-xs font-normal text-gray-500">
+                    {miniText(15, user?.email)}
+                  </p>
+                </div>
+              </div>
+            )}
+          </AnimatePresence>
+
+          <div className="flex-center size-7 rounded-md p-1 bg-gray-500/5 hover:bg-gray-500/10 transition-all cursor-pointer" onClick={() => setProfilePrompt(true)}>
+            <HiDotsVertical size={20} />
           </div>
         </div>
       </div>

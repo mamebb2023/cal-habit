@@ -8,7 +8,7 @@ const Layout = ({ children }: { children: React.ReactNode }) => {
     <div className="relative h-screen overflow-hidden bg-gray-50 p-2">
       <SideBar />
 
-      <div className="relative overflow-y-auto">{children}</div>
+      <div className="relative">{children}</div>
     </div>
   );
 };

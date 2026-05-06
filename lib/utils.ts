@@ -6,6 +6,10 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
+export function isMobile() {
+  return typeof window !== "undefined" && window.innerWidth <= 768;
+}
+
 export function validateName(name: string): boolean {
   // Name must be between 3 and 20 characters
   return name.length >= 2 && name.length <= 20;
