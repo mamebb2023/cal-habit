@@ -1,0 +1,109 @@
+input::placeholder {
+  color: rgb(156 163 175);
+  /* gray-400 */
+  opacity: 1;
+}
+
+
+.btn {
+  position: relative;
+  width: 150px;
+  height: 50px;
+  border: none;
+  outline: none;
+  z-index: 0;
+  border-radius: 12px;
+}
+
+.btn::after {
+  content: "";
+  z-index: -1;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(-45deg, #00eaff, #007bff, #1e3aff);
+  border-radius: 7px;
+}
+
+.btn::before {
+  content: "";
+  background: linear-gradient(-45deg, #fff, #00eaff, #007bff, #1e3aff, #fff);
+  position: absolute;
+  top: -2px;
+  left: -2px;
+  background-size: 600%;
+  border-radius: 10px;
+  z-index: -1;
+  width: calc(100% + 5px);
+  height: calc(100% + 5px);
+  filter: blur(8px);
+  opacity: 0.5;
+  transition: opacity .3s ease-in-out;
+  animation: glowing 30s linear infinite;
+}
+
+.btn:hover:before {
+  opacity: 1;
+}
+
+.btn:active {
+  scale: 0.98;
+}
+
+@keyframes glowing {
+  0% {
+    background-position: 0 0;
+  }
+
+  50% {
+    background-position: 400% 0;
+  }
+
+  100% {
+    background-position: 0 0;
+  }
+}
+
+.add-habit-circle {
+  color: rgb(255 255 255);
+}
+
+.add-habit-box:hover .add-habit-circle {
+  background-color: transparent;
+}
+
+.rotate-360 {
+  animation: rotate-360 infinite 7s linear;
+  -moz-animation: rotate-360 infinite 7s linear;
+  -webkit-animation: rotate-360 infinite 7s linear;
+  -o-animation: rotate-360 infinite 7s linear;
+}
+
+@keyframes rotate-360 {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.rotate-circle {
+  animation: rotate-circle infinite 70s linear;
+  -moz-animation: rotate-circle infinite 70s linear;
+  -webkit-animation: rotate-circle infinite 70s linear;
+  -o-animation: rotate-circle infinite 70s linear;
+}
+
+@keyframes rotate-circle {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
+}
