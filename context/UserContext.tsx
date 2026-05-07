@@ -6,6 +6,7 @@ import React, {
   useState,
   ReactNode,
   useEffect,
+  useCallback,
 } from "react";
 import { jwtDecode } from "jwt-decode";
 
@@ -18,49 +19,51 @@ interface User {
 interface UserContextProps {
   user: User | null;
   setUser: (data: User | null) => void;
-  logout: () => void; // Add logout function to context
+  logout: () => void;
+  refreshUser: () => void;
+  isLoading: boolean;
 }
 
 const UserContext = createContext<UserContextProps | undefined>(undefined);
 
 export const UserProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fetch user from token when component mounts
-  useEffect(() => {
+  const refreshUser = useCallback(async () => {
+    setIsLoading(true);
+    await Promise.resolve(); // yield so React renders the loading state
     const userFromToken = getUserFromToken();
-    if (userFromToken) {
-      setUser(userFromToken);
-    }
+    setUser(userFromToken ?? null);
+    setIsLoading(false);
   }, []);
 
-  // Logout function clears user data, token, and other session data
-  const logout = () => {
-    // Clear local storage and session storage
+  useEffect(() => {
+    refreshUser();
+  }, [refreshUser]);
+
+  const logout = async () => {
+    setIsLoading(true);
+    await Promise.resolve();
     localStorage.removeItem("token");
     sessionStorage.removeItem("habits");
-    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT"; // Clear cookie
-
-    // Set user to null
+    document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
     setUser(null);
-
-    // Redirect to home page
+    setIsLoading(false);
     window.location.href = "/";
   };
 
   return (
-    <UserContext.Provider value={{ user, setUser, logout }}>
+    <UserContext.Provider value={{ user, setUser, logout, refreshUser, isLoading }}>
       {children}
     </UserContext.Provider>
   );
 };
 
-// Helper function to get user from token (with the try-catch block)
 export function getUserFromToken(): User | null {
   try {
     const token = localStorage.getItem("token");
     if (!token) return null;
-
     return jwtDecode<User>(token);
   } catch (error) {
     console.error("Error retrieving or decoding token:", error);
@@ -68,7 +71,6 @@ export function getUserFromToken(): User | null {
   }
 }
 
-// Custom hook to access user context
 export const useUserContext = () => {
   const context = useContext(UserContext);
   if (!context) {

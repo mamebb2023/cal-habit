@@ -1,5 +1,4 @@
 import { AnimatePresence, motion } from "framer-motion";
-import { Fleur_De_Leah } from "next/font/google";
 import Link from "next/link";
 import React, { useEffect, useState } from "react";
 import { useUserContext } from "@/context/UserContext";
@@ -9,7 +8,6 @@ import {
   BiCheck,
   BiChevronRight,
   BiLogOut,
-  BiMenu,
   BiPlus,
   BiUser,
   BiX,
@@ -18,11 +16,11 @@ import AreYouSurePrompt from "./modals/AreYouSurePrompt";
 import { TbLayoutSidebarLeftCollapseFilled, TbLayoutSidebarRightCollapseFilled } from "react-icons/tb";
 import { useRouter } from "next/navigation";
 import { months } from "@/constants";
-import { HiDotsVertical } from "react-icons/hi";
 import AddHabit from "./modals/AddHabit";
 import toast from "react-hot-toast";
+import { Suspense } from "./ui/Suspense";
+import Skeleton from "./ui/Skeleton";
 
-const font = Fleur_De_Leah({ subsets: ["latin"], weight: "400" });
 
 type Habit = {
   _id: string;
@@ -41,6 +39,7 @@ const SideBar = () => {
   const [habitName, setHabitName] = useState("");
   const [logoutPrompt, setLogoutPrompt] = useState(false);
   const [habits, setHabits] = useState<Habit[]>([]);
+  const [habitsLoading, setHabitsLoading] = useState(true);
   const [expandedHabits, setExpandedHabits] = useState<Record<string, boolean>>({});
   const { user, logout } = useUserContext();
   const router = useRouter();
@@ -49,7 +48,11 @@ const SideBar = () => {
 
   const fetchHabits = async () => {
     const user = getUserFromToken();
-    if (!user) return;
+    if (!user) {
+      setHabitsLoading(false);
+      return;
+    }
+    setHabitsLoading(true);
     try {
       const res = await fetch(`/api/habits/get?user_id=${user._id}`);
       if (res.ok) {
@@ -58,6 +61,8 @@ const SideBar = () => {
       }
     } catch (err) {
       console.error("SideBar: error fetching habits", err);
+    } finally {
+      setHabitsLoading(false);
     }
   };
 
@@ -134,7 +139,7 @@ const SideBar = () => {
         )}
       </AnimatePresence>
 
-      <div className={`${collapsed ? "w-14" : "w-68"} relative flex flex-col justify-between gap-3 py-2 md:h-full transition-all duration-300 ease-in-out`}>
+      <div className={`${collapsed ? "w-14" : "w-68"} relative flex flex-col justify-between gap-3 md:h-full transition-all duration-300 ease-in-out`}>
         {/* logo and collapse */}
         <div className={`flex items-center justify-between gap-3 px-3 py-2 bg-white rounded-2xl shadow-2xl`}>
           <AnimatePresence>
@@ -148,7 +153,7 @@ const SideBar = () => {
                     alt="CalHabit Logo"
                     width={120}
                     height={40}
-                    className="h-9 w-auto"
+                    className="h-8 w-auto"
                   />
                 </Link>
                 <span className="ml-2">
@@ -182,139 +187,151 @@ const SideBar = () => {
             )}
 
             {/* middle: habit summary */}
-            {!collapsed && habits && habits.length > 0 && (
+            {!collapsed && (
               <div className="hidden md:flex flex-col gap-3 py-3 px-1">
-                {habits.map((habit) => {
-                  const displayName = miniText(20, habit.habit_name);
-                  const isExpanded = expandedHabits[habit._id];
+                <Suspense
+                  fallback={
+                    <div className="flex flex-col gap-3">
+                      <Skeleton width={200} height={100} />
+                      <Skeleton width={200} height={100} />
+                      <Skeleton width={200} height={100} />
+                    </div>
+                  }
+                  loading={habitsLoading}
+                >
+                  {habits.map((habit) => {
+                    const displayName = miniText(20, habit.habit_name);
+                    const isExpanded = expandedHabits[habit._id];
 
-                  const visibleMonths = months
-                    .map((monthName, monthIndex) => {
-                      const { doneCount, undoneCount } = getMonthData(
-                        habit,
-                        currentYear,
-                        monthIndex + 1
-                      );
-                      if (doneCount === 0 && undoneCount === 0) return null;
-                      return { monthName, monthIndex, doneCount, undoneCount };
-                    })
-                    .filter(Boolean) as {
-                      monthName: string;
-                      monthIndex: number;
-                      doneCount: number;
-                      undoneCount: number;
-                    }[];
+                    const visibleMonths = months
+                      .map((monthName, monthIndex) => {
+                        const { doneCount, undoneCount } = getMonthData(
+                          habit,
+                          currentYear,
+                          monthIndex + 1
+                        );
+                        if (doneCount === 0 && undoneCount === 0) return null;
+                        return { monthName, monthIndex, doneCount, undoneCount };
+                      })
+                      .filter(Boolean) as {
+                        monthName: string;
+                        monthIndex: number;
+                        doneCount: number;
+                        undoneCount: number;
+                      }[];
 
-                  const showToggle = visibleMonths.length > 3;
-                  const displayedMonths = isExpanded
-                    ? visibleMonths
-                    : visibleMonths.slice(0, 3);
+                    const showToggle = visibleMonths.length > 3;
+                    const displayedMonths = isExpanded
+                      ? visibleMonths
+                      : visibleMonths.slice(0, 3);
 
-                  return (
-                    <motion.div
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      key={habit._id}
-                      className="flex flex-col gap-2 p-3 rounded-xl bg-gray-500/5"
-                    >
-                      {/* Title with arrow */}
-                      <div className="flex items-center justify-between gap-2">
-                        <p className="font-semibold text-sm text-gray-800 leading-none">
-                          {displayName}
+                    return (
+                      <motion.div
+                        key={habit._id}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col gap-2 p-3 rounded-xl bg-gray-500/5"
+                      >
+                        {/* Title with arrow */}
+                        <div className="flex items-center justify-between gap-2">
+                          <p className="font-semibold text-sm text-gray-800 leading-none">
+                            {displayName}
+                          </p>
+                          <Link
+                            href={`/habits/${habit._id}`}
+                            className="flex-center size-6 rounded-md hover:bg-gray-500/20 transition-all shrink-0 cursor-pointer"
+                          >
+                            <BiChevronRight size={18} className="text-gray-600" />
+                          </Link>
+                        </div>
+
+                        {/* Year */}
+                        <p className="text-xs font-semibold text-gray-600">
+                          {currentYear}
                         </p>
-                        <button
-                          onClick={() => router.push(`/habits/${habit._id}`)}
-                          className="flex-center size-6 rounded-md hover:bg-gray-500/20 transition-all shrink-0 cursor-pointer"
-                        >
-                          <BiChevronRight size={18} className="text-gray-600" />
-                        </button>
-                      </div>
 
-                      {/* Year */}
-                      <p className="text-xs font-semibold text-gray-600">
-                        {currentYear}
-                      </p>
-
-                      {/* Months with counts */}
-                      <div className="flex flex-col gap-1.5">
-                        <div className="relative">
-                          <div className="flex flex-col gap-1.5">
-                            {displayedMonths.map(
-                              ({ monthName, monthIndex, doneCount, undoneCount }) => (
-                                <div
-                                  key={monthIndex}
-                                  className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-white/50"
-                                >
-                                  <span className="text-xs font-medium text-gray-700">
-                                    {monthName.slice(0, 3)}
-                                  </span>
-                                  <div className="flex items-center gap-2 shrink-0">
-                                    <div className="flex items-center gap-1">
-                                      <span className="flex-center size-4 rounded-full bg-green-100 text-green-600">
-                                        <BiCheck size={10} />
-                                      </span>
-                                      <span className="text-xs font-semibold text-green-600">
-                                        {doneCount}
-                                      </span>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                      <span className="flex-center size-4 rounded-full bg-red-100 text-red-500">
-                                        <BiX size={10} />
-                                      </span>
-                                      <span className="text-xs font-semibold text-red-500">
-                                        {undoneCount}
-                                      </span>
+                        {/* Months with counts */}
+                        <div className="flex flex-col gap-1.5">
+                          <div className="relative">
+                            <div className="flex flex-col gap-1.5">
+                              {displayedMonths.map(
+                                ({ monthName, monthIndex, doneCount, undoneCount }) => (
+                                  <div
+                                    key={monthIndex}
+                                    className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-white/50"
+                                  >
+                                    <span className="text-xs font-medium text-gray-700">
+                                      {monthName.slice(0, 3)}
+                                    </span>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                      <div className="flex items-center gap-1">
+                                        <span className="flex-center size-4 rounded-full bg-green-100 text-green-600">
+                                          <BiCheck size={10} />
+                                        </span>
+                                        <span className="text-xs font-semibold text-green-600">
+                                          {doneCount}
+                                        </span>
+                                      </div>
+                                      <div className="flex items-center gap-1">
+                                        <span className="flex-center size-4 rounded-full bg-red-100 text-red-500">
+                                          <BiX size={10} />
+                                        </span>
+                                        <span className="text-xs font-semibold text-red-500">
+                                          {undoneCount}
+                                        </span>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                              )
+                                )
+                              )}
+                            </div>
+
+                            {/* Gradient fade + Show more */}
+                            {showToggle && !isExpanded && (
+                              <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-100 to-transparent rounded-b-lg flex items-end justify-center pb-1">
+                                <button
+                                  onClick={() =>
+                                    setExpandedHabits((prev) => ({
+                                      ...prev,
+                                      [habit._id]: true,
+                                    }))
+                                  }
+                                  className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                                >
+                                  Show more
+                                </button>
+                              </div>
                             )}
                           </div>
 
-                          {/* Gradient fade + Show more */}
-                          {showToggle && !isExpanded && (
-                            <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-100 to-transparent rounded-b-lg flex items-end justify-center pb-1">
-                              <button
-                                onClick={() =>
-                                  setExpandedHabits((prev) => ({
-                                    ...prev,
-                                    [habit._id]: true,
-                                  }))
-                                }
-                                className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
-                              >
-                                Show more
-                              </button>
-                            </div>
+                          {/* Show less */}
+                          {showToggle && isExpanded && (
+                            <button
+                              onClick={() =>
+                                setExpandedHabits((prev) => ({
+                                  ...prev,
+                                  [habit._id]: false,
+                                }))
+                              }
+                              className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 transition-colors mt-0.5 cursor-pointer"
+                            >
+                              Show less
+                            </button>
                           )}
                         </div>
-
-                        {/* Show less */}
-                        {showToggle && isExpanded && (
-                          <button
-                            onClick={() =>
-                              setExpandedHabits((prev) => ({
-                                ...prev,
-                                [habit._id]: false,
-                              }))
-                            }
-                            className="text-[10px] font-semibold text-gray-400 hover:text-gray-600 transition-colors mt-0.5 cursor-pointer"
-                          >
-                            Show less
-                          </button>
-                        )}
-                      </div>
-                    </motion.div>
-                  );
-                })}
+                      </motion.div>
+                    )
+                  })}
+                </Suspense>
               </div>
             )}
           </div>
 
+          {/* Add New Habit button */}
           {!collapsed &&
             <button
-              className="flex-center w-full rounded-full p-2 text-sm bg-gradient-to-r from-color-primary via-color-secondary to-color-tertiary text-white transition-all cursor-pointer hover:opacity-90"
+              className="flex-center w-full rounded-full p-2 text-sm bg-gradient-to-r from-color-primary via-color-secondary to-color-tertiary text-white transition-all cursor-pointer hover:opacity-90 shrink-0"
               onClick={() => setAddHabit(true)}
             >
               <BiPlus size={20} /> Add New Habit
@@ -334,6 +351,7 @@ const SideBar = () => {
             <BiUser size={24} />
           </button>
 
+          {/* {`${isLoading}`} */}
           <AnimatePresence>
             {!collapsed && (
               <motion.div
@@ -342,10 +360,14 @@ const SideBar = () => {
                 animate={{ opacity: 1 }}
               >
                 <div>
-                  <p className={``}>{miniText(12, user?.name)}</p>
-                  <p className="text-xs font-normal text-gray-500">
-                    {miniText(15, user?.email)}
-                  </p>
+                  <Suspense fallback={<Skeleton width={80} height={14} />}>
+                    <p className={``}>{miniText(12, user?.name || "")}</p>
+                  </Suspense>
+                  <Suspense fallback={<Skeleton width={80} height={12} />}>
+                    <p className="text-xs font-normal text-gray-500">
+                      {miniText(15, user?.email || "")}
+                    </p>
+                  </Suspense>
                 </div>
 
                 <div className="flex-center size-7 rounded-md p-1 bg-gray-500/5">
@@ -365,8 +387,14 @@ const SideBar = () => {
                 className="absolute z-10 bottom-0 -right-3 translate-x-full bg-white shadow-xl rounded-xl overflow-hidden min-w-[160px]"
               >
                 <div className="px-4 py-3 border-b border-gray-100">
-                  <p className="font-semibold text-sm text-gray-800">{user?.name}</p>
-                  <p className="text-xs text-gray-500 truncate">{user?.email}</p>
+                  <Suspense fallback={<Skeleton width={80} height={14} />}>
+                    <p className={``}>{user?.name || ""}</p>
+                  </Suspense>
+                  <Suspense fallback={<Skeleton width={100} height={12} />}>
+                    <p className="text-xs font-normal text-gray-500">
+                      {user?.email || ""}
+                    </p>
+                  </Suspense>
                 </div>
 
                 {/* Logout button */}

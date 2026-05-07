@@ -5,10 +5,10 @@ import React from "react";
 
 const Layout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="relative h-screen overflow-hidden bg-gray-50 p-2">
+    <div className="flex gap-3 relative h-screen overflow-hidden bg-gray-50 p-4">
       <SideBar />
 
-      <div className="relative">{children}</div>
+      <div className="flex-1 relative">{children}</div>
     </div>
   );
 };

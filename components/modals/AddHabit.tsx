@@ -15,7 +15,7 @@ const AddHabit = ({ onClose, onInputChange, handleCreateHabit }: Props) => {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       onClick={onClose}
-      className="z-50 fixed inset-0 w-full h-full bg-black/40 backdrop-blur-sm flex items-center justify-center p-4"
+      className="z-50 fixed inset-0 w-full h-full bg-black/30 backdrop-blur-xs flex items-center justify-center p-4"
     >
       <motion.div
         initial={{ scale: 0.92, opacity: 0, y: 12 }}
