@@ -136,7 +136,7 @@ const Page = () => {
         </div>
 
         {/* habits container */}
-        <div className="flex justify-center md:justify-start flex-wrap gap-3 p-2">
+        <div className="flex justify-center md:justify-start flex-wrap gap-3 p-2 overflow-y-auto">
           {habits.length === 0 ? (
             <div className="w-full py-16 flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-gray-300/80 bg-gray-50/80">
               <p className="text-lg font-semibold text-gray-900">
