@@ -26,7 +26,7 @@ const AreYouSurePrompt = ({ title, onClose, onDelete }: Props) => {
         className="w-[320px] bg-white rounded-2xl shadow-2xl overflow-hidden"
       >
         {/* top accent bar */}
-        <div className="h-1 w-full bg-gradient-to-r from-violet-400 via-rose-400 to-orange-300" />
+        <div className="h-1 w-full bg-gradient-to-r from-color-primary via-color-secondary to-color-tertiary" />
 
         <div className="p-6 flex flex-col items-center gap-5">
           {/* icon */}
@@ -48,13 +48,13 @@ const AreYouSurePrompt = ({ title, onClose, onDelete }: Props) => {
           <div className="flex gap-3 w-full">
             <button
               onClick={onClose}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
+              className="cursor-pointer flex-1 px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors"
             >
               Cancel
             </button>
             <button
               onClick={onDelete}
-              className="flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all"
+              className="cursor-pointer flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all"
             >
               Log out
             </button>

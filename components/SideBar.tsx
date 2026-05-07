@@ -333,10 +333,11 @@ const SideBar = () => {
           >
             <BiUser size={24} />
           </button>
+
           <AnimatePresence>
             {!collapsed && (
               <motion.div
-                className="flex items-center gap-2"
+                className="flex items-center justify-between gap-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
@@ -345,6 +346,10 @@ const SideBar = () => {
                   <p className="text-xs font-normal text-gray-500">
                     {miniText(15, user?.email)}
                   </p>
+                </div>
+
+                <div className="flex-center size-7 rounded-md p-1 bg-gray-500/5">
+                  <BiChevronRight size={14} />
                 </div>
               </motion.div>
             )}
