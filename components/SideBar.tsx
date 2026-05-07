@@ -188,7 +188,7 @@ const SideBar = () => {
 
             {/* middle: habit summary */}
             {!collapsed && (
-              <div className="hidden md:flex flex-col gap-3 py-3 px-1">
+              <div className="flex flex-col gap-3 py-3 px-1">
                 <Suspense
                   fallback={
                     <div className="flex flex-col gap-3">
