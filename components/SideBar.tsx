@@ -337,7 +337,7 @@ const SideBar = () => {
           <AnimatePresence>
             {!collapsed && (
               <motion.div
-                className="flex items-center justify-between gap-2"
+                className="flex flex-1 items-center justify-between gap-2"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
               >
