@@ -122,6 +122,7 @@ const SideBar = () => {
       <AnimatePresence>
         {logoutPrompt && (
           <AreYouSurePrompt
+            actionText="Logout"
             title="Are you sure you want to logout?"
             onClose={() => setLogoutPrompt(false)}
             onDelete={logout}
@@ -139,7 +140,7 @@ const SideBar = () => {
         )}
       </AnimatePresence>
 
-      <div className={`${collapsed ? "w-14" : "w-68"} relative flex flex-col justify-between gap-3 md:h-full transition-all duration-300 ease-in-out`}>
+      <div className={`${collapsed ? "w-14" : "w-68"} hidden relative md:flex flex-col justify-between gap-3 md:h-full transition-all duration-300 ease-in-out`}>
         {/* logo and collapse */}
         <div className={`flex items-center justify-between gap-3 px-3 py-2 bg-white rounded-2xl shadow-2xl`}>
           <AnimatePresence>

@@ -6,9 +6,10 @@ interface Props {
   title: string;
   onClose: () => void;
   onDelete: () => void;
+  actionText: string;
 }
 
-const AreYouSurePrompt = ({ title, onClose, onDelete }: Props) => {
+const AreYouSurePrompt = ({ title, onClose, onDelete, actionText }: Props) => {
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -56,7 +57,7 @@ const AreYouSurePrompt = ({ title, onClose, onDelete }: Props) => {
               onClick={onDelete}
               className="cursor-pointer flex-1 px-4 py-2.5 rounded-xl text-sm font-semibold text-white bg-rose-500 hover:bg-rose-600 active:scale-95 transition-all"
             >
-              Log out
+              {actionText}
             </button>
           </div>
         </div>

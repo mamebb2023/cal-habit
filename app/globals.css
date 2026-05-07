@@ -31,7 +31,7 @@
   }
 
   .bg-gradient {
-    @apply bg-linear-to-br from-cyan-500 via-blue-500 to-indigo-500 text-white;
+    @apply bg-linear-to-br from-cyan-500 via-blue-500 to-indigo-500;
   }
 }
 
