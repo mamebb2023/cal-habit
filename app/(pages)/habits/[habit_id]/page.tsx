@@ -114,7 +114,7 @@ const Page = () => {
   };
 
   return (
-    <div className="h-screen flex flex-col p-2 gap-3 overflow-hidden">
+    <div className="h-screen flex flex-col p-2 gap-3 overflow-y-hidden">
       <AnimatePresence>
         {deleteHabitPrompt && (
           <AreYouSurePrompt
@@ -172,7 +172,7 @@ const Page = () => {
             return (
               <div
                 key={monthIndex}
-                className="w-[300px] px-3 py-2 bg-white rounded-2xl shadow-2xl"
+                className="w-[300px] px-3 py-2 bg-white rounded-2xl shadow-2xl border border-gray-500/30"
               >
                 <div className="flex items-center justify-between border-b border-color-secondary pb-1 mb-2">
                   <p className="font-semibold">{month}</p>
@@ -213,7 +213,7 @@ const Page = () => {
                       <div
                         key={index}
                         className={`relative flex-center p-1 border border-gray-500/30 rounded-[10px] ${daytoday
-                          ? "bg-gradient cursor-pointer border-none"
+                          ? "text-white bg-gradient cursor-pointer border-none"
                           : isPastDate
                             ? "text-color-tertiary border-color-tertiary cursor-pointer"
                             : "text-gray-500/50 cursor-not-allowed"

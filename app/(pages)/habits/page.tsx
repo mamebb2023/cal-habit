@@ -216,7 +216,7 @@ const Page = () => {
                             <div
                               key={index}
                               className={`relative flex-center p-1 border rounded-[10px] ${isToday
-                                ? "bg-gradient cursor-pointer border-none"
+                                ? "text-white bg-gradient cursor-pointer border-none"
                                 : isPastDate
                                   ? "text-color-tertiary border-color-tertiary cursor-pointer"
                                   : "text-black/50 border-gray-500/70 cursor-not-allowed"
