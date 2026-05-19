@@ -1,15 +1,15 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
 import AddHabit from "@/components/modals/AddHabit";
 import AddHabitBtn from "@/components/modals/AddHabitBtn";
-import { AnimatePresence, motion } from "framer-motion";
+import { days, months } from "@/constants";
 import { useUserContext } from "@/context/UserContext";
 import { getDaysForMonth, getLastTwoDigits, getUserFromToken } from "@/lib/utils";
-import toast from "react-hot-toast";
+import { AnimatePresence, motion } from "framer-motion";
 import { Fleur_De_Leah } from "next/font/google";
-import { days, months } from "@/constants";
 import Link from "next/link";
+import { useCallback, useEffect, useRef, useState } from "react";
+import toast from "react-hot-toast";
 import { BiLock, BiRightArrowAlt, BiX } from "react-icons/bi";
 import { BsCheck } from "react-icons/bs";
 
@@ -17,9 +17,6 @@ const font = Fleur_De_Leah({ subsets: ["latin"], weight: "400" });
 
 const Page = () => {
   const { user } = useUserContext();
-  const [addHabit, setAddHabit] = useState(false);
-  const [habitName, setHabitName] = useState("");
-
   const [habits, setHabits] = useState<
     {
       _id: string;
@@ -31,6 +28,10 @@ const Page = () => {
       }[];
     }[]
   >([]);
+
+  const [addHabit, setAddHabit] = useState(false);
+
+  const [habitName, setHabitName] = useState("");
 
   const [selectedDay, setSelectedDay] = useState<{
     month: number | null;
@@ -124,6 +125,25 @@ const Page = () => {
     }
   };
 
+  const scrollContainerRefs = useRef<(HTMLDivElement | null)[]>([]);
+
+  useEffect(() => {
+    if (habits.length > 0) {
+      scrollContainerRefs.current.forEach((container) => {
+        if (container) {
+          const todayElement = container.querySelector(`[data-day="${today}"]`);
+          if (todayElement) {
+            todayElement.scrollIntoView({
+              behavior: "smooth",
+              inline: "center",
+              block: "nearest",
+            });
+          }
+        }
+      });
+    }
+  }, [habits, today]);
+
   return (
     <>
       <AnimatePresence>
@@ -131,13 +151,12 @@ const Page = () => {
           <AddHabit
             onClose={() => setAddHabit(false)}
             onInputChange={setHabitName}
-            handleCreateHabit={() => handleCreateHabit()}
+            handleCreateHabit={handleCreateHabit}
           />
         )}
       </AnimatePresence>
 
-      {/* MAIN WRAPPER MUST HAVE HEIGHT */}
-      <div className="relative flex flex-col gap-3 h-screen overflow-y-auto p-2">
+      <div className="relative flex flex-col gap-3 h-screen p-2">
         {/* habits title */}
         <div className="px-3 py-2 bg-white rounded-2xl shadow-2xl flex items-center justify-between shrink-0">
           <h1 className="text-2xl font-bold text-gray-900">My Habits</h1>
@@ -145,48 +164,52 @@ const Page = () => {
           <AddHabitBtn onClick={() => setAddHabit(true)} />
         </div>
 
-        <div className="flex-1 overflow-y-auto pb-5">
-          <div className="flex justify-center md:justify-start flex-wrap gap-3 p-2">
-            {habits.length === 0 ? (
-              <div className="w-full py-16 flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-gray-300/80 bg-gray-50/80">
-                <p className="text-lg font-semibold text-gray-900">
-                  You don&apos;t have any habits yet
-                </p>
-                <p className="mt-1 text-sm text-gray-600 max-w-md">
-                  Start by creating your first habit to begin tracking your progress.
-                </p>
-                <div className="mt-4">
-                  <AddHabitBtn onClick={() => setAddHabit(true)} />
-                </div>
+        <div className="flex flex-col items-center md:items-start gap-3 md:flex-row ">
+          {/* habits list */}
+          {habits.length === 0 ? (
+            <div className="w-full py-16 flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-gray-300/80 bg-gray-50/80">
+              <p className="text-lg font-semibold text-gray-900">
+                You don&apos;t have any habits yet
+              </p>
+              <p className="mt-1 text-sm text-gray-600 max-w-md">
+                Start by creating your first habit to begin tracking your progress.
+              </p>
+              <div className="mt-4">
+                <AddHabitBtn onClick={() => setAddHabit(true)} />
               </div>
-            ) : (
-              habits.map((habit, habitIndex) => {
-                const adjustedMonth = currentMonth + 1;
+            </div>
+          ) : (
+            habits.map((habit, habitIndex) => {
+              const adjustedMonth = currentMonth + 1;
 
-                return (
-                  <div key={habitIndex} className="flex flex-col gap-1">
-                    {/* habit name */}
-                    <Link
-                      href={`/habits/${habit._id}`}
-                      className="flex items-center justify-between px-3 py-1 hover:bg-gray-500/10 rounded-lg transition"
-                    >
-                      <p className="font-bold">
-                        {habit.habit_name.length > 30
-                          ? habit.habit_name.slice(0, 30) + "…"
-                          : habit.habit_name}
+              return (
+                <div
+                  key={habitIndex}
+                  className="flex flex-col gap-1 w-sm md:w-auto "
+                >
+                  {/* habit name */}
+                  <Link
+                    href={`/habits/${habit._id}`}
+                    className="flex items-center justify-between px-3 py-1 m-1 hover:bg-gray-400/10 rounded-lg transition"
+                  >
+                    <p className="font-bold">
+                      {habit.habit_name.length > 30
+                        ? habit.habit_name.slice(0, 30) + "…"
+                        : habit.habit_name}
+                    </p>
+                    <BiRightArrowAlt size={18} />
+                  </Link>
+
+                  <div className="px-3 py-2 bg-white rounded-2xl shadow-2xl">
+                    <div className="flex items-center justify-between border-b border-color-secondary pb-1 mb-2">
+                      <p className="font-semibold">{months[currentMonth]}</p>
+                      <p className="text-sm">
+                        {adjustedMonth}/{getLastTwoDigits(`${currentYear}`)}
                       </p>
-                      <BiRightArrowAlt size={18} />
-                    </Link>
+                    </div>
 
-                    {/* calendar box */}
-                    <div className="w-[300px] px-3 py-2 bg-white rounded-2xl shadow-2xl">
-                      <div className="flex items-center justify-between border-b border-color-secondary pb-1 mb-2">
-                        <p className="font-semibold">{months[currentMonth]}</p>
-                        <p className="text-sm">
-                          {adjustedMonth}/{getLastTwoDigits(`${currentYear}`)}
-                        </p>
-                      </div>
-
+                    {/* Desktop: Grid layout */}
+                    <div className="hidden md:block">
                       <div className="grid grid-cols-7 text-center font-semibold mb-1">
                         {days.map((day) => (
                           <div
@@ -298,11 +321,120 @@ const Page = () => {
                         })}
                       </div>
                     </div>
+
+                    {/* mobile view */}
+                    <div
+                      className="md:hidden flex gap-2 py-2 overflow-x-auto"
+                      // style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
+                      ref={(el) => {
+                        scrollContainerRefs.current[habitIndex] = el;
+                      }}
+                    >
+                      {daysForMonth.filter((day) => day).map((day) => {
+                        const habitDate = habit.dates.find(
+                          (d) =>
+                            d.date.year === currentYear &&
+                            d.date.month === adjustedMonth &&
+                            d.date.day === day
+                        );
+
+                        const isDone = habitDate?.status === "done";
+                        const isUndone = habitDate?.status === "undone";
+                        const isPastDate = day < today;
+                        const isToday = day === today;
+
+                        return (
+                          <div
+                            key={day}
+                            data-day={day}
+                            className={
+                              `relative shrink-0 flex items-center justify-center w-8 h-8 border rounded-lg
+                            ${isToday
+                                ? "text-white bg-gradient cursor-pointer border-none"
+                                : isPastDate
+                                  ? "text-color-tertiary border-color-tertiary cursor-pointer"
+                                  : "text-black/50 border-gray-500/70 cursor-not-allowed"
+                              }`}
+                            onClick={() =>
+                              day <= today &&
+                              setSelectedDay((prev) =>
+                                prev.habitIndex === habitIndex &&
+                                  prev.day === day &&
+                                  prev.month === currentMonth
+                                  ? { habitIndex: null, day: null, month: null }
+                                  : { habitIndex, day, month: currentMonth }
+                              )
+                            }
+                          >
+                            <AnimatePresence>
+                              {selectedDay.habitIndex === habitIndex &&
+                                selectedDay.day === day && (
+                                  <motion.div
+                                    initial={{ y: 10, opacity: 0 }}
+                                    animate={{ y: 0, opacity: 1 }}
+                                    exit={{ y: 10, opacity: 0 }}
+                                    className="z-10 absolute p-1 -top-8 bg-white border rounded-full flex-center gap-1"
+                                  >
+                                    <div
+                                      className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-green-400 hover:bg-green-500 transition text-white"
+                                      onClick={() =>
+                                        handleDayStatusUpdate({
+                                          habit_id: habit._id,
+                                          day,
+                                          month: adjustedMonth,
+                                          year: currentYear,
+                                          status: "done",
+                                        })
+                                      }
+                                    >
+                                      <BsCheck size={16} />
+                                    </div>
+
+                                    <div
+                                      className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-red-400 hover:bg-red-500 transition text-white"
+                                      onClick={() =>
+                                        handleDayStatusUpdate({
+                                          habit_id: habit._id,
+                                          day,
+                                          month: adjustedMonth,
+                                          year: currentYear,
+                                          status: "undone",
+                                        })
+                                      }
+                                    >
+                                      <BiX size={16} />
+                                    </div>
+                                  </motion.div>
+                                )}
+                            </AnimatePresence>
+                            {day}
+
+                            <div className="absolute -top-2 -right-2 text-white rounded-full text-[.6em] flex-center">
+                              {habitDate ? (
+                                isDone ? (
+                                  <div className="flex-center p-px rounded-full bg-green-500">
+                                    <BsCheck size={16} />
+                                  </div>
+                                ) : (
+                                  isUndone && (
+                                    <div className="flex-center p-px rounded-full bg-red-500">
+                                      <BiX size={16} />
+                                    </div>
+                                  )
+                                )
+                              ) : day > today ? (
+                                <BiLock size={16} className="text-gray-400" />
+                              ) : null}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
-                );
-              })
-            )}
-          </div>
+                </div>
+              )
+            })
+          )}
         </div>
       </div>
     </>
