@@ -201,7 +201,7 @@ const Page = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed z-50 bottom-0 left-1/2 -translate-x-1/2 bg-white w-full max-w-md rounded-t-xl overflow-hidden"
+              className="fixed z-50 bottom-0 left-1/2 -translate-x-1/2 bg-white w-full max-w-md mx-3 rounded-t-xl overflow-hidden"
             >
               {/* Header */}
               <div className="px-6 pt-6 pb-4 border-b border-gray-400/40 flex justify-between items-start">
@@ -217,7 +217,9 @@ const Page = () => {
                   disabled={isUpdating !== null}
                   onClick={() => setSelectedDay(null)}
                   className={`p-2 -mr-2 rounded-full hover:bg-gray-100 transition ${
-                    isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                    isUpdating
+                      ? "opacity-50 cursor-not-allowed"
+                      : "cursor-pointer"
                   }`}
                 >
                   <BiX size={32} />
@@ -313,7 +315,7 @@ const Page = () => {
               return (
                 <div
                   key={habitIndex}
-                  className="flex flex-col gap-1 w-sm md:w-auto "
+                  className="flex flex-col gap-1 max-w-[80vw] md:w-auto"
                 >
                   {/* habit name */}
                   <Link
