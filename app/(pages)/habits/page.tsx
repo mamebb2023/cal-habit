@@ -33,17 +33,19 @@ const Page = () => {
 
   const [habitName, setHabitName] = useState("");
 
-  const [selectedDay, setSelectedDay] = useState<{
-    month: number | null;
-    habitIndex: number | null;
-    day: number | null;
-  }>({ month: null, habitIndex: null, day: null });
-
   const currentDate = new Date();
   const today = currentDate.getDate();
   const currentMonth = currentDate.getMonth();
   const currentYear = currentDate.getFullYear();
   const daysForMonth = getDaysForMonth(currentYear, currentMonth) as number[];
+
+  // Mobile Full Screen Popup
+  const [selectedDay, setSelectedDay] = useState<{
+    habitIndex: number;
+    day: number;
+    habitId: string;
+    habitName: string;
+  } | null>(null);
 
   const fetchHabits = useCallback(async () => {
     const loggedInUser = getUserFromToken();
@@ -156,6 +158,86 @@ const Page = () => {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {selectedDay && (
+          <>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-black/70 flex justify-center items-end backdrop-blur-xs" />
+
+<motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="fixed z-50 bottom-0 left-1/2 -translate-x-1/2 bg-white w-full max-w-md rounded-t-xl overflow-hidden"
+            >
+              
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4 border-b border-gray-400/40 flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500">
+                    {months[currentMonth]} {selectedDay.day}, {currentYear}
+                  </p>
+                  <p className="text-2xl font-bold mt-1 leading-tight">
+                    {selectedDay.habitName}
+                  </p>
+                </div>
+                <button
+                  onClick={() => setSelectedDay(null)}
+                  className="p-2 -mr-2 rounded-full hover:bg-gray-100 cursor-pointer"
+                >
+                  <BiX size={32} />
+                </button>
+              </div>
+
+              <div className="text-center pt-4 text-gray-400 text-sm">
+                Day {selectedDay.day} • {months[currentMonth]}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-4 mb-2 space-y-4">
+                <button
+                  onClick={() =>
+                    handleDayStatusUpdate({
+                      habit_id: selectedDay.habitId,
+                      day: selectedDay.day,
+                      month: adjustedMonth,
+                      year: currentYear,
+                      status: "done",
+                    })
+                  }
+                  className="w-full flex cursor-pointer items-center justify-center gap-4 bg-green-500 hover:bg-green-600 active:bg-green-700 transition-all text-white text-xl font-semibold p-3 rounded-2xl"
+                >
+                  <BsCheck size={36} />
+                  MARK AS DONE
+                </button>
+
+                <button
+                  onClick={() =>
+                    handleDayStatusUpdate({
+                      habit_id: selectedDay.habitId,
+                      day: selectedDay.day,
+                      month: adjustedMonth,
+                      year: currentYear,
+                      status: "undone",
+                    })
+                  }
+                  className="w-full flex cursor-pointer items-center justify-center gap-4 bg-red-500 hover:bg-red-600 active:bg-red-700 transition-all text-white text-xl font-semibold p-3 rounded-2xl"
+                >
+                  <BiX size={36} />
+                  MARK AS UNDONE
+                </button>
+              </div>
+
+              
+            </motion.div>
+            </>
+        )}
+      </AnimatePresence>
+
       <div className="relative flex flex-col gap-3 h-screen p-2">
         {/* habits title */}
         <div className="px-3 py-2 bg-white rounded-2xl shadow-2xl flex items-center justify-between shrink-0">
@@ -244,59 +326,16 @@ const Page = () => {
                                   ? "text-color-tertiary border-color-tertiary cursor-pointer"
                                   : "text-black/50 border-gray-500/70 cursor-not-allowed"
                                 } ${!day && "invisible"}`}
-                              onClick={() =>
-                                day <= today &&
-                                setSelectedDay((prev) =>
-                                  prev.habitIndex === habitIndex &&
-                                    prev.day === day &&
-                                    prev.month === currentMonth
-                                    ? { habitIndex: null, day: null, month: null }
-                                    : { habitIndex, day, month: currentMonth }
-                                )
-                              }
+                                onClick={() => {
+                                  if (day > today) return;
+                                  setSelectedDay({
+                                    habitIndex,
+                                    day,
+                                    habitId: habit._id,
+                                    habitName: habit.habit_name,
+                                  });
+                                }}
                             >
-                              <AnimatePresence>
-                                {selectedDay.habitIndex === habitIndex &&
-                                  selectedDay.day === day && (
-                                    <motion.div
-                                      initial={{ y: 10, opacity: 0 }}
-                                      animate={{ y: 0, opacity: 1 }}
-                                      exit={{ y: 10, opacity: 0 }}
-                                      className="z-10 absolute p-1 -top-6 bg-white border rounded-full flex-center gap-1"
-                                    >
-                                      <div
-                                        className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-green-400 hover:bg-green-500 transition text-white"
-                                        onClick={() =>
-                                          handleDayStatusUpdate({
-                                            habit_id: habit._id,
-                                            day,
-                                            month: adjustedMonth,
-                                            year: currentYear,
-                                            status: "done",
-                                          })
-                                        }
-                                      >
-                                        <BsCheck size={16} />
-                                      </div>
-
-                                      <div
-                                        className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-red-400 hover:bg-red-500 transition text-white"
-                                        onClick={() =>
-                                          handleDayStatusUpdate({
-                                            habit_id: habit._id,
-                                            day,
-                                            month: adjustedMonth,
-                                            year: currentYear,
-                                            status: "undone",
-                                          })
-                                        }
-                                      >
-                                        <BiX size={16} />
-                                      </div>
-                                    </motion.div>
-                                  )}
-                              </AnimatePresence>
-
                               {day}
 
                               <div className="absolute -top-2 -right-2 text-white rounded-full text-[.6em] flex-center">
@@ -325,7 +364,6 @@ const Page = () => {
                     {/* mobile view */}
                     <div
                       className="md:hidden flex gap-2 py-2 overflow-x-auto"
-                      // style={{ scrollbarWidth: "none", msOverflowStyle: "none" }}
                       ref={(el) => {
                         scrollContainerRefs.current[habitIndex] = el;
                       }}
@@ -355,58 +393,16 @@ const Page = () => {
                                   ? "text-color-tertiary border-color-tertiary cursor-pointer"
                                   : "text-black/50 border-gray-500/70 cursor-not-allowed"
                               }`}
-                            onClick={() =>
-                              day <= today &&
-                              setSelectedDay((prev) =>
-                                prev.habitIndex === habitIndex &&
-                                  prev.day === day &&
-                                  prev.month === currentMonth
-                                  ? { habitIndex: null, day: null, month: null }
-                                  : { habitIndex, day, month: currentMonth }
-                              )
-                            }
+                              onClick={() => {
+                                if (day > today) return;
+                                setSelectedDay({
+                                  habitIndex,
+                                  day,
+                                  habitId: habit._id,
+                                  habitName: habit.habit_name,
+                                });
+                              }}
                           >
-                            <AnimatePresence>
-                              {selectedDay.habitIndex === habitIndex &&
-                                selectedDay.day === day && (
-                                  <motion.div
-                                    initial={{ y: 10, opacity: 0 }}
-                                    animate={{ y: 0, opacity: 1 }}
-                                    exit={{ y: 10, opacity: 0 }}
-                                    className="z-10 absolute p-1 -top-8 bg-white border rounded-full flex-center gap-1"
-                                  >
-                                    <div
-                                      className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-green-400 hover:bg-green-500 transition text-white"
-                                      onClick={() =>
-                                        handleDayStatusUpdate({
-                                          habit_id: habit._id,
-                                          day,
-                                          month: adjustedMonth,
-                                          year: currentYear,
-                                          status: "done",
-                                        })
-                                      }
-                                    >
-                                      <BsCheck size={16} />
-                                    </div>
-
-                                    <div
-                                      className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-red-400 hover:bg-red-500 transition text-white"
-                                      onClick={() =>
-                                        handleDayStatusUpdate({
-                                          habit_id: habit._id,
-                                          day,
-                                          month: adjustedMonth,
-                                          year: currentYear,
-                                          status: "undone",
-                                        })
-                                      }
-                                    >
-                                      <BiX size={16} />
-                                    </div>
-                                  </motion.div>
-                                )}
-                            </AnimatePresence>
                             {day}
 
                             <div className="absolute -top-2 -right-2 text-white rounded-full text-[.6em] flex-center">
@@ -436,7 +432,7 @@ const Page = () => {
             })
           )}
         </div>
-      </div>
+      </div >
     </>
   );
 };
