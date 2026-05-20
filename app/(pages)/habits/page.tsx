@@ -295,7 +295,10 @@ const Page = () => {
           <AddHabitBtn onClick={() => setAddHabit(true)} />
         </div>
 
-        <div className="flex flex-col items-center md:items-start gap-3 md:flex-row ">
+        <div
+          className="flex flex-col items-center md:items-start gap-3 md:flex-row overflow-y-auto pb-3"
+          data-lenis-prevent
+        >
           {/* habits list */}
           {habits.length === 0 ? (
             <div className="w-full py-16 flex flex-col items-center justify-center text-center rounded-2xl border border-dashed border-gray-300/80 bg-gray-50/80">
@@ -313,10 +316,7 @@ const Page = () => {
           ) : (
             habits.map((habit, habitIndex) => {
               return (
-                <div
-                  key={habitIndex}
-                  className="flex flex-col gap-1 max-w-[90vw] md:w-auto"
-                >
+                <div key={habitIndex} className="flex flex-col gap-1 md:w-auto">
                   {/* habit name */}
                   <Link
                     href={`/habits/${habit._id}`}
