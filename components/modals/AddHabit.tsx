@@ -23,15 +23,15 @@ const AddHabit = ({ onClose, onInputChange, handleCreateHabit }: Props) => {
         exit={{ scale: 0.92, opacity: 0, y: 12 }}
         transition={{ type: "spring", stiffness: 300, damping: 25 }}
         onClick={(e) => e.stopPropagation()}
-        className="w-full max-w-[340px] bg-white rounded-3xl shadow-2xl overflow-hidden"
+        className="w-full max-w-85 bg-white rounded-3xl shadow-2xl overflow-hidden"
       >
         {/* top accent bar */}
-        <div className="h-1.5 w-full bg-gradient-to-r from-color-primary via-color-secondary to-color-tertiary" />
+        <div className="h-1.5 w-full bg-linear-to-r from-color-primary via-color-secondary to-color-tertiary" />
 
         <div className="p-4 flex flex-col items-center gap-4">
           {/* icon container */}
           <div className="flex-center size-16 rounded-2xl bg-indigo-50 border border-indigo-100 rotate-3">
-            <div className="flex-center size-12 rounded-xl bg-gradient-to-br from-color-primary to-color-secondary text-white shadow-lg -rotate-3">
+            <div className="flex-center size-12 rounded-xl bg-linear-to-br from-color-primary to-color-secondary text-white shadow-lg -rotate-3">
               <BiPlus className="text-3xl" />
             </div>
           </div>
@@ -48,7 +48,10 @@ const AddHabit = ({ onClose, onInputChange, handleCreateHabit }: Props) => {
 
           {/* input area */}
           <div className="w-full space-y-2">
-            <label htmlFor="habit-name" className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1">
+            <label
+              htmlFor="habit-name"
+              className="text-[11px] font-bold text-gray-400 uppercase tracking-wider ml-1"
+            >
               Habit Name
             </label>
             <input
@@ -76,7 +79,7 @@ const AddHabit = ({ onClose, onInputChange, handleCreateHabit }: Props) => {
             </button>
             <button
               onClick={handleCreateHabit}
-              className="cursor-pointer flex-[1.5] px-4 py-3 rounded-xl text-sm font-bold text-white bg-gradient hover:opacity-90 active:scale-95 shadow-md shadow-color-primary/20 transition-all"
+              className="cursor-pointer flex-[1.5] px-4 py-3 rounded-xl text-sm font-bold text-white bg-linear hover:opacity-90 active:scale-95 shadow-md shadow-color-primary/20 transition-all"
             >
               Create Habit
             </button>
@@ -88,4 +91,3 @@ const AddHabit = ({ onClose, onInputChange, handleCreateHabit }: Props) => {
 };
 
 export default AddHabit;
-

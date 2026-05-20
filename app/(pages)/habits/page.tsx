@@ -201,15 +201,15 @@ const Page = () => {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
-              className="fixed z-50 bottom-0 left-1/2 -translate-x-1/2 bg-white w-full max-w-md mx-3 rounded-t-xl overflow-hidden"
+              className="fixed z-50 bottom-0 left-1/2 -translate-x-1/2 bg-white min-w-sm max-w-md mx-1 rounded-t-xl overflow-hidden"
             >
               {/* Header */}
-              <div className="px-6 pt-6 pb-4 border-b border-gray-400/40 flex justify-between items-start">
+              <div className="px-6 py-4 border-b border-gray-400/40 flex justify-between items-start">
                 <div>
                   <p className="text-sm text-gray-500">
                     {months[currentMonth]} {selectedDay.day}, {currentYear}
                   </p>
-                  <p className="text-2xl font-bold mt-1 leading-tight">
+                  <p className="text-lg md:text-2xl font-bold mt-1 leading-tight">
                     {selectedDay.habitName}
                   </p>
                 </div>
@@ -243,7 +243,7 @@ const Page = () => {
                       status: "done",
                     })
                   }
-                  className={`w-full flex items-center justify-center gap-4 bg-green-500 text-white text-xl font-semibold p-3 rounded-2xl transition-all ${
+                  className={`w-full flex items-center justify-center gap-4 bg-green-500 text-white text-md md:text-xl font-semibold p-3 rounded-2xl transition-all ${
                     isUpdating
                       ? "opacity-60 cursor-not-allowed"
                       : "hover:bg-green-600 active:bg-green-700 cursor-pointer"
@@ -268,7 +268,7 @@ const Page = () => {
                       status: "undone",
                     })
                   }
-                  className={`w-full flex items-center justify-center gap-4 bg-red-500 text-white text-xl font-semibold p-3 rounded-2xl transition-all ${
+                  className={`w-full flex items-center justify-center gap-4 bg-red-500 text-white text-md md:text-xl font-semibold p-3 rounded-2xl transition-all ${
                     isUpdating
                       ? "opacity-60 cursor-not-allowed"
                       : "hover:bg-red-600 active:bg-red-700 cursor-pointer"
@@ -315,7 +315,7 @@ const Page = () => {
               return (
                 <div
                   key={habitIndex}
-                  className="flex flex-col gap-1 max-w-[80vw] md:w-auto"
+                  className="flex flex-col gap-1 max-w-[90vw] md:w-auto"
                 >
                   {/* habit name */}
                   <Link
@@ -339,7 +339,7 @@ const Page = () => {
                     </div>
 
                     {/* Desktop: Grid layout */}
-                    <div className="hidden md:block">
+                    <div className="">
                       <div className="grid grid-cols-7 text-center font-semibold mb-1">
                         {days.map((day) => (
                           <div
@@ -410,9 +410,9 @@ const Page = () => {
                       </div>
                     </div>
 
-                    {/* mobile view */}
+                    {/* mobile view
                     <div
-                      className="md:hidden flex gap-2 py-2 overflow-x-auto"
+                      className="hidden gap-2 py-2 overflow-x-auto"
                       ref={(el) => {
                         scrollContainerRefs.current[habitIndex] = el;
                       }}
@@ -436,7 +436,7 @@ const Page = () => {
                             <div
                               key={day}
                               data-day={day}
-                              className={`relative shrink-0 flex items-center justify-center w-8 h-8 border rounded-lg
+                              className={`relative shrink-0 flex items-center justify-center text-sm size-7 md:size-8 border rounded-lg
                             ${
                               isToday
                                 ? "text-white bg-gradient cursor-pointer border-none"
@@ -476,7 +476,7 @@ const Page = () => {
                             </div>
                           );
                         })}
-                    </div>
+                    </div> */}
                   </div>
                 </div>
               );
