@@ -13,7 +13,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useUserContext } from "@/context/UserContext";
 import toast from "react-hot-toast";
 import { BsCheck } from "react-icons/bs";
-import { BiLeftArrowAlt, BiLock, BiTrash, BiX } from "react-icons/bi";
+import { BiLeftArrowAlt, BiLoaderAlt, BiLock, BiTrash, BiX } from "react-icons/bi";
 
 const Page = () => {
   const router = useRouter();
@@ -47,13 +47,19 @@ const Page = () => {
   }, [habit_id]);
 
   useEffect(() => {
-    fetchHabit();
+    const loadHabit = async () => {
+      await fetchHabit();
+    };
+
+    void loadHabit();
   }, [fetchHabit]);
 
   const [selectedDay, setSelectedDay] = useState<{
-    month: number | null;
-    day: number | null;
-  }>({ month: null, day: null });
+    month: number;
+    day: number;
+  } | null>(null);
+
+  const [isUpdating, setIsUpdating] = useState<"done" | "undone" | null>(null);
 
   const [deleteHabitPrompt, setDeleteHabitPrompt] = useState(false);
 
@@ -76,6 +82,7 @@ const Page = () => {
     status: "done" | "undone";
   }) => {
     if (!user) return null;
+    setIsUpdating(status);
 
     try {
       const response = await fetch("/api/habits/update-day-status", {
@@ -87,10 +94,13 @@ const Page = () => {
       if (response.ok) {
         const data = await response.json();
         toast.success(data.message);
-        fetchHabit();
+        await fetchHabit();
+        setSelectedDay(null);
       }
     } catch {
       console.error("Error updating day status");
+    } finally {
+      setIsUpdating(null);
     }
   };
 
@@ -128,6 +138,104 @@ const Page = () => {
         )}
       </AnimatePresence>
 
+      <AnimatePresence>
+        {selectedDay && (
+          <>
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isUpdating && setSelectedDay(null)}
+              className="fixed inset-0 z-50 bg-black/70 flex justify-center items-end backdrop-blur-xs cursor-pointer"
+            />
+
+            <motion.div
+              initial={{ opacity: 0, y: "100%" }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: "100%" }}
+              transition={{ type: "spring", damping: 28, stiffness: 280 }}
+              className="fixed z-50 bottom-0 left-1/2 -translate-x-1/2 bg-white w-full max-w-md rounded-t-xl overflow-hidden shadow-2xl"
+            >
+              {/* Header */}
+              <div className="px-6 pt-6 pb-4 border-b border-gray-400/40 flex justify-between items-start">
+                <div>
+                  <p className="text-sm text-gray-500">
+                    {months[selectedDay.month]} {selectedDay.day}, {selectedYear}
+                  </p>
+                  <p className="text-2xl font-bold mt-1 leading-tight text-gray-900">
+                    {habit && habit.habit_name}
+                  </p>
+                </div>
+                <button
+                  disabled={isUpdating !== null}
+                  onClick={() => setSelectedDay(null)}
+                  className={`p-2 -mr-2 rounded-full hover:bg-gray-100 transition ${
+                    isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}
+                >
+                  <BiX size={32} />
+                </button>
+              </div>
+
+              <div className="text-center pt-4 text-gray-400 text-sm">
+                Day {selectedDay.day} • {months[selectedDay.month]}
+              </div>
+
+              {/* Action Buttons */}
+              <div className="p-4 mb-2 space-y-4">
+                <button
+                  disabled={isUpdating !== null}
+                  onClick={() =>
+                    handleDayStatusUpdate({
+                      day: selectedDay.day,
+                      month: selectedDay.month + 1,
+                      year: selectedYear,
+                      status: "done",
+                    })
+                  }
+                  className={`w-full flex items-center justify-center gap-4 bg-green-500 text-white text-xl font-semibold p-3 rounded-2xl transition-all ${
+                    isUpdating
+                      ? "opacity-60 cursor-not-allowed"
+                      : "hover:bg-green-600 active:bg-green-700 cursor-pointer"
+                  }`}
+                >
+                  {isUpdating === "done" ? (
+                    <BiLoaderAlt className="animate-spin" size={36} />
+                  ) : (
+                    <BsCheck size={36} />
+                  )}
+                  MARK AS DONE
+                </button>
+
+                <button
+                  disabled={isUpdating !== null}
+                  onClick={() =>
+                    handleDayStatusUpdate({
+                      day: selectedDay.day,
+                      month: selectedDay.month + 1,
+                      year: selectedYear,
+                      status: "undone",
+                    })
+                  }
+                  className={`w-full flex items-center justify-center gap-4 bg-red-500 text-white text-xl font-semibold p-3 rounded-2xl transition-all ${
+                    isUpdating
+                      ? "opacity-60 cursor-not-allowed"
+                      : "hover:bg-red-600 active:bg-red-700 cursor-pointer"
+                  }`}
+                >
+                  {isUpdating === "undone" ? (
+                    <BiLoaderAlt className="animate-spin" size={36} />
+                  ) : (
+                    <BiX size={36} />
+                  )}
+                  MARK AS UNDONE
+                </button>
+              </div>
+            </motion.div>
+          </>
+        )}
+      </AnimatePresence>
+
       {/* Habits title */}
       <div className="px-3 py-2 bg-white rounded-2xl shadow-2xl flex items-center justify-between shrink-0">
         <div className="flex-center gap-2">
@@ -147,7 +255,7 @@ const Page = () => {
             setSelectedYear(year);
             toast.success(`Year ${year} selected!`);
           }}
-          className="w-[150px] border border-gray-200 p-1 px-2 rounded-lg cursor-pointer outline-none"
+          className="w-37.5 border border-gray-200 p-1 px-2 rounded-lg cursor-pointer outline-none"
         >
           {Array.from({ length: 10 }, (_, i) => currentYear - i).map((year) => (
             <option key={year} value={year} className="text-gray-900 bg-white">
@@ -165,7 +273,7 @@ const Page = () => {
       </div>
 
       {/* Months calendar (SCROLLABLE) */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" data-lenis-prevent>
         <div className="flex justify-center flex-wrap gap-3 pb-5">
           {months.map((month, monthIndex) => {
             const adjustedMonth = monthIndex + 1;
@@ -174,7 +282,7 @@ const Page = () => {
             return (
               <div
                 key={monthIndex}
-                className="w-[300px] px-3 py-2 bg-white rounded-2xl shadow-2xl border border-gray-500/30"
+                className="w-75 px-3 py-2 bg-white rounded-2xl shadow-2xl border border-gray-500/30"
               >
                 <div className="flex items-center justify-between border-b border-color-secondary pb-1 mb-2">
                   <p className="font-semibold">{month}</p>
@@ -220,54 +328,11 @@ const Page = () => {
                             ? "text-color-tertiary border-color-tertiary cursor-pointer"
                             : "text-gray-500/50 cursor-not-allowed"
                           } ${!day && "invisible"}`}
-                        onClick={() =>
-                          isPastDate &&
-                          setSelectedDay((prev) =>
-                            prev.day === day && prev.month === monthIndex
-                              ? { day: null, month: null }
-                              : { day, month: monthIndex }
-                          )
-                        }
+                        onClick={() => {
+                          if (!isPastDate) return;
+                          setSelectedDay({ day, month: monthIndex });
+                        }}
                       >
-                        <AnimatePresence>
-                          {selectedDay.day === day && selectedDay.month === monthIndex && (
-                            <motion.div
-                              initial={{ y: 10, opacity: 0 }}
-                              animate={{ y: 0, opacity: 1 }}
-                              exit={{ y: 10, opacity: 0 }}
-                              className="z-10 absolute p-1 -top-6 bg-white border rounded-full flex-center gap-1 text-color-primary"
-                            >
-                              <div
-                                className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-green-400 hover:bg-green-500 transition text-white"
-                                onClick={() =>
-                                  handleDayStatusUpdate({
-                                    day,
-                                    month: adjustedMonth,
-                                    year: selectedYear,
-                                    status: "done",
-                                  })
-                                }
-                              >
-                                <BsCheck size={18} />
-                              </div>
-
-                              <div
-                                className="size-6 flex-center p-1 rounded-full text-[.7em] cursor-pointer bg-red-400 hover:bg-red-500 transition text-white"
-                                onClick={() =>
-                                  handleDayStatusUpdate({
-                                    day,
-                                    month: adjustedMonth,
-                                    year: selectedYear,
-                                    status: "undone",
-                                  })
-                                }
-                              >
-                                <BiX size={18} />
-                              </div>
-                            </motion.div>
-                          )}
-                        </AnimatePresence>
-
                         <p className="text-[.9em] font-semibold">{day}</p>
 
                         <div className="absolute -top-2 -right-2 rounded-full text-[.6em] flex-center">

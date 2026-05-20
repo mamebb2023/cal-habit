@@ -13,14 +13,15 @@ import {
   BiX,
 } from "react-icons/bi";
 import AreYouSurePrompt from "./modals/AreYouSurePrompt";
-import { TbLayoutSidebarLeftCollapseFilled, TbLayoutSidebarRightCollapseFilled } from "react-icons/tb";
-import { useRouter } from "next/navigation";
+import {
+  TbLayoutSidebarLeftCollapseFilled,
+  TbLayoutSidebarRightCollapseFilled,
+} from "react-icons/tb";
 import { months } from "@/constants";
 import AddHabit from "./modals/AddHabit";
 import toast from "react-hot-toast";
 import { Suspense } from "./ui/Suspense";
 import Skeleton from "./ui/Skeleton";
-
 
 type Habit = {
   _id: string;
@@ -40,13 +41,15 @@ const SideBar = () => {
   const [logoutPrompt, setLogoutPrompt] = useState(false);
   const [habits, setHabits] = useState<Habit[]>([]);
   const [habitsLoading, setHabitsLoading] = useState(true);
-  const [expandedHabits, setExpandedHabits] = useState<Record<string, boolean>>({});
+  const [expandedHabits, setExpandedHabits] = useState<Record<string, boolean>>(
+    {},
+  );
   const { user, logout } = useUserContext();
-  const router = useRouter();
 
   const currentYear = new Date().getFullYear();
 
   const fetchHabits = async () => {
+    await Promise.resolve();
     const user = getUserFromToken();
     if (!user) {
       setHabitsLoading(false);
@@ -68,10 +71,12 @@ const SideBar = () => {
 
   useEffect(() => {
     if (isMobile()) {
-      setCollapsed(true);
+      setTimeout(() => setCollapsed(true), 0);
     }
 
-    fetchHabits();
+    setTimeout(() => {
+      void fetchHabits();
+    }, 0);
   }, []);
 
   const handleCreateHabit = async () => {
@@ -110,7 +115,7 @@ const SideBar = () => {
 
   const getMonthData = (habit: Habit, year: number, month: number) => {
     const monthDates = habit.dates.filter(
-      (d) => d.date.year === year && d.date.month === month
+      (d) => d.date.year === year && d.date.month === month,
     );
     const doneCount = monthDates.filter((d) => d.status === "done").length;
     const undoneCount = monthDates.filter((d) => d.status === "undone").length;
@@ -140,14 +145,20 @@ const SideBar = () => {
         )}
       </AnimatePresence>
 
-      <div className={`${collapsed ? "w-14" : "w-68"} hidden relative md:flex flex-col justify-between gap-3 md:h-full transition-all duration-300 ease-in-out`}>
+      <div
+        className={`${collapsed ? "w-14" : "w-68"} relative flex flex-col justify-between gap-3 h-full transition-all duration-300 ease-in-out`}
+      >
         {/* logo and collapse */}
-        <div className={`flex items-center justify-between gap-3 px-3 py-2 bg-white rounded-2xl shadow-2xl`}>
+        <div
+          className={`flex items-center justify-between gap-3 px-3 py-2 bg-white rounded-2xl shadow-2xl`}
+        >
           <AnimatePresence>
             {!collapsed && (
               <motion.div
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                className="flex items-center">
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="flex items-center"
+              >
                 <Link href="/" className="shrink-0">
                   <Image
                     src="/logo.png"
@@ -157,14 +168,16 @@ const SideBar = () => {
                     className="h-8 w-auto"
                   />
                 </Link>
-                <span className="ml-2">
-                  CalHabit
-                </span>
+                <span className="ml-2">CalHabit</span>
               </motion.div>
             )}
           </AnimatePresence>
 
-          <button className="flex-center size-7 rounded-md p-1 bg-gray-500/5 hover:bg-gray-500/10 transition-all cursor-pointer" onClick={() => setCollapsed((prev) => !prev)} style={{ boxShadow: "inset -2px -2px 7px #dededeff" }}>
+          <button
+            className="flex-center size-7 rounded-md p-1 bg-gray-500/5 hover:bg-gray-500/10 transition-all cursor-pointer"
+            onClick={() => setCollapsed((prev) => !prev)}
+            style={{ boxShadow: "inset -2px -2px 7px #dededeff" }}
+          >
             {collapsed ? (
               <TbLayoutSidebarRightCollapseFilled size={18} />
             ) : (
@@ -174,13 +187,56 @@ const SideBar = () => {
         </div>
 
         <div className="relative shrink-0 p-3 bg-white rounded-2xl shadow-2xl flex-1 min-h-0 flex flex-col items-center">
-          <div className="w-full flex-1 min-h-0 overflow-y-auto">
+          <AnimatePresence>
+            {collapsed && (
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="absolute inset-2 bg-gray-500/10 rounded-2xl shadow-2xl z-10 overflow-hidden"
+              >
+                <motion.div
+                  initial={{ top: "0%", left: "100%" }}
+                  animate={{ top: "100%", left: "0%" }}
+                  transition={{
+                    delay: 1,
+                    duration: 7,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                    ease: "linear",
+                  }}
+                  exit={{ opacity: 0 }}
+                  className="absolute opacity-50 blur-lg -translate-x-1/2 -translate-y-1/2 size-20 rounded-full bg-linear-to-br from-red-500 via-pink-500 to-orange-500"
+                />
+
+                <motion.div
+                  initial={{ top: "100%", left: "0%" }}
+                  animate={{ top: "0%", left: "100%" }}
+                  transition={{
+                    duration: 7,
+                    repeat: Infinity,
+                    repeatType: "reverse",
+                    ease: "linear",
+                  }}
+                  exit={{ opacity: 0 }}
+                  className="absolute opacity-50 blur-lg -translate-x-1/2 -translate-y-1/2 size-20 rounded-full bg-linear-to-br from-green-500 via-indigo-500 to-blue-500"
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          <div
+            className="w-full flex-1 min-h-0 overflow-y-auto"
+            data-lenis-prevent
+          >
             {/* title */}
             {!collapsed && (
               <AnimatePresence>
                 <motion.h2
                   className="px-2 pt-2 text-lg font-semibold text-gray-600"
-                  initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
                 >
                   Habits
                 </motion.h2>
@@ -209,17 +265,22 @@ const SideBar = () => {
                         const { doneCount, undoneCount } = getMonthData(
                           habit,
                           currentYear,
-                          monthIndex + 1
+                          monthIndex + 1,
                         );
                         if (doneCount === 0 && undoneCount === 0) return null;
-                        return { monthName, monthIndex, doneCount, undoneCount };
+                        return {
+                          monthName,
+                          monthIndex,
+                          doneCount,
+                          undoneCount,
+                        };
                       })
                       .filter(Boolean) as {
-                        monthName: string;
-                        monthIndex: number;
-                        doneCount: number;
-                        undoneCount: number;
-                      }[];
+                      monthName: string;
+                      monthIndex: number;
+                      doneCount: number;
+                      undoneCount: number;
+                    }[];
 
                     const showToggle = visibleMonths.length > 3;
                     const displayedMonths = isExpanded
@@ -243,7 +304,10 @@ const SideBar = () => {
                             href={`/habits/${habit._id}`}
                             className="flex-center size-6 rounded-md hover:bg-gray-500/20 transition-all shrink-0 cursor-pointer"
                           >
-                            <BiChevronRight size={18} className="text-gray-600" />
+                            <BiChevronRight
+                              size={18}
+                              className="text-gray-600"
+                            />
                           </Link>
                         </div>
 
@@ -257,7 +321,12 @@ const SideBar = () => {
                           <div className="relative">
                             <div className="flex flex-col gap-1.5">
                               {displayedMonths.map(
-                                ({ monthName, monthIndex, doneCount, undoneCount }) => (
+                                ({
+                                  monthName,
+                                  monthIndex,
+                                  doneCount,
+                                  undoneCount,
+                                }) => (
                                   <div
                                     key={monthIndex}
                                     className="flex items-center justify-between gap-2 px-2 py-1 rounded-lg bg-white/50"
@@ -284,13 +353,13 @@ const SideBar = () => {
                                       </div>
                                     </div>
                                   </div>
-                                )
+                                ),
                               )}
                             </div>
 
-                            {/* Gradient fade + Show more */}
+                            {/* linear fade + Show more */}
                             {showToggle && !isExpanded && (
-                              <div className="absolute bottom-0 left-0 right-0 h-10 bg-gradient-to-t from-gray-100 to-transparent rounded-b-lg flex items-end justify-center pb-1">
+                              <div className="absolute bottom-0 left-0 right-0 h-10 bg-linear-to-t from-gray-100 to-transparent rounded-b-lg flex items-end justify-center pb-1">
                                 <button
                                   onClick={() =>
                                     setExpandedHabits((prev) => ({
@@ -322,7 +391,7 @@ const SideBar = () => {
                           )}
                         </div>
                       </motion.div>
-                    )
+                    );
                   })}
                 </Suspense>
               </div>
@@ -330,14 +399,14 @@ const SideBar = () => {
           </div>
 
           {/* Add New Habit button */}
-          {!collapsed &&
+          {!collapsed && (
             <button
-              className="flex-center w-full rounded-full p-2 text-sm bg-gradient-to-r from-color-primary via-color-secondary to-color-tertiary text-white transition-all cursor-pointer hover:opacity-90 shrink-0"
+              className="flex-center w-full rounded-full p-2 text-sm bg-linear-to-r from-color-primary via-color-secondary to-color-tertiary text-white transition-all cursor-pointer hover:opacity-90 shrink-0"
               onClick={() => setAddHabit(true)}
             >
               <BiPlus size={20} /> Add New Habit
             </button>
-          }
+          )}
         </div>
 
         {/* footer profile */}
@@ -385,7 +454,7 @@ const SideBar = () => {
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.15 }}
-                className="absolute z-10 bottom-0 -right-3 translate-x-full bg-white shadow-xl rounded-xl overflow-hidden min-w-[160px]"
+                className="absolute z-10 bottom-0 -right-3 translate-x-full bg-white shadow-xl rounded-xl overflow-hidden min-w-40"
               >
                 <div className="px-4 py-3 border-b border-gray-100">
                   <Suspense fallback={<Skeleton width={80} height={14} />}>

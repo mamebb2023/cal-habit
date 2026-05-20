@@ -4,13 +4,17 @@ import AddHabit from "@/components/modals/AddHabit";
 import AddHabitBtn from "@/components/modals/AddHabitBtn";
 import { days, months } from "@/constants";
 import { useUserContext } from "@/context/UserContext";
-import { getDaysForMonth, getLastTwoDigits, getUserFromToken } from "@/lib/utils";
+import {
+  getDaysForMonth,
+  getLastTwoDigits,
+  getUserFromToken,
+} from "@/lib/utils";
 import { AnimatePresence, motion } from "framer-motion";
 import { Fleur_De_Leah } from "next/font/google";
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import toast from "react-hot-toast";
-import { BiLock, BiRightArrowAlt, BiX } from "react-icons/bi";
+import { BiLoaderAlt, BiLock, BiRightArrowAlt, BiX } from "react-icons/bi";
 import { BsCheck } from "react-icons/bs";
 
 const font = Fleur_De_Leah({ subsets: ["latin"], weight: "400" });
@@ -36,6 +40,7 @@ const Page = () => {
   const currentDate = new Date();
   const today = currentDate.getDate();
   const currentMonth = currentDate.getMonth();
+  const adjustedMonth = currentMonth + 1;
   const currentYear = currentDate.getFullYear();
   const daysForMonth = getDaysForMonth(currentYear, currentMonth) as number[];
 
@@ -46,6 +51,8 @@ const Page = () => {
     habitId: string;
     habitName: string;
   } | null>(null);
+
+  const [isUpdating, setIsUpdating] = useState<"done" | "undone" | null>(null);
 
   const fetchHabits = useCallback(async () => {
     const loggedInUser = getUserFromToken();
@@ -63,7 +70,11 @@ const Page = () => {
   }, []);
 
   useEffect(() => {
-    fetchHabits();
+    const loadHabit = async () => {
+      await fetchHabits();
+    };
+
+    void loadHabit();
   }, [fetchHabits]);
 
   const handleDayStatusUpdate = async ({
@@ -80,21 +91,34 @@ const Page = () => {
     status: "done" | "undone";
   }) => {
     if (!user) return null;
+    setIsUpdating(status);
 
     try {
       const response = await fetch("/api/habits/update-day-status", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user._id, habit_id, day, month, year, status }),
+        body: JSON.stringify({
+          user_id: user._id,
+          habit_id,
+          day,
+          month,
+          year,
+          status,
+        }),
       });
 
       if (response.ok) {
         const data = await response.json();
-        toast.success(`${data.message} Day ${day} status updated to ${status}.`);
-        fetchHabits();
+        toast.success(
+          `${data.message} Day ${day} status updated to ${status}.`,
+        );
+        await fetchHabits();
+        setSelectedDay(null);
       }
     } catch {
       console.error("Error updating day status");
+    } finally {
+      setIsUpdating(null);
     }
   };
 
@@ -113,7 +137,10 @@ const Page = () => {
       const response = await fetch("/api/habits/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ user_id: user._id, habit_name: trimmedHabitName }),
+        body: JSON.stringify({
+          user_id: user._id,
+          habit_name: trimmedHabitName,
+        }),
       });
 
       if (response.ok) {
@@ -161,20 +188,21 @@ const Page = () => {
       <AnimatePresence>
         {selectedDay && (
           <>
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black/70 flex justify-center items-end backdrop-blur-xs" />
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => !isUpdating && setSelectedDay(null)}
+              className="fixed inset-0 z-50 bg-black/70 flex justify-center items-end backdrop-blur-xs cursor-pointer"
+            />
 
-<motion.div
+            <motion.div
               initial={{ opacity: 0, y: "100%" }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: "100%" }}
               transition={{ type: "spring", damping: 28, stiffness: 280 }}
               className="fixed z-50 bottom-0 left-1/2 -translate-x-1/2 bg-white w-full max-w-md rounded-t-xl overflow-hidden"
             >
-              
               {/* Header */}
               <div className="px-6 pt-6 pb-4 border-b border-gray-400/40 flex justify-between items-start">
                 <div>
@@ -186,8 +214,11 @@ const Page = () => {
                   </p>
                 </div>
                 <button
+                  disabled={isUpdating !== null}
                   onClick={() => setSelectedDay(null)}
-                  className="p-2 -mr-2 rounded-full hover:bg-gray-100 cursor-pointer"
+                  className={`p-2 -mr-2 rounded-full hover:bg-gray-100 transition ${
+                    isUpdating ? "opacity-50 cursor-not-allowed" : "cursor-pointer"
+                  }`}
                 >
                   <BiX size={32} />
                 </button>
@@ -200,6 +231,7 @@ const Page = () => {
               {/* Action Buttons */}
               <div className="p-4 mb-2 space-y-4">
                 <button
+                  disabled={isUpdating !== null}
                   onClick={() =>
                     handleDayStatusUpdate({
                       habit_id: selectedDay.habitId,
@@ -209,13 +241,22 @@ const Page = () => {
                       status: "done",
                     })
                   }
-                  className="w-full flex cursor-pointer items-center justify-center gap-4 bg-green-500 hover:bg-green-600 active:bg-green-700 transition-all text-white text-xl font-semibold p-3 rounded-2xl"
+                  className={`w-full flex items-center justify-center gap-4 bg-green-500 text-white text-xl font-semibold p-3 rounded-2xl transition-all ${
+                    isUpdating
+                      ? "opacity-60 cursor-not-allowed"
+                      : "hover:bg-green-600 active:bg-green-700 cursor-pointer"
+                  }`}
                 >
-                  <BsCheck size={36} />
+                  {isUpdating === "done" ? (
+                    <BiLoaderAlt className="animate-spin" size={36} />
+                  ) : (
+                    <BsCheck size={36} />
+                  )}
                   MARK AS DONE
                 </button>
 
                 <button
+                  disabled={isUpdating !== null}
                   onClick={() =>
                     handleDayStatusUpdate({
                       habit_id: selectedDay.habitId,
@@ -225,16 +266,22 @@ const Page = () => {
                       status: "undone",
                     })
                   }
-                  className="w-full flex cursor-pointer items-center justify-center gap-4 bg-red-500 hover:bg-red-600 active:bg-red-700 transition-all text-white text-xl font-semibold p-3 rounded-2xl"
+                  className={`w-full flex items-center justify-center gap-4 bg-red-500 text-white text-xl font-semibold p-3 rounded-2xl transition-all ${
+                    isUpdating
+                      ? "opacity-60 cursor-not-allowed"
+                      : "hover:bg-red-600 active:bg-red-700 cursor-pointer"
+                  }`}
                 >
-                  <BiX size={36} />
+                  {isUpdating === "undone" ? (
+                    <BiLoaderAlt className="animate-spin" size={36} />
+                  ) : (
+                    <BiX size={36} />
+                  )}
                   MARK AS UNDONE
                 </button>
               </div>
-
-              
             </motion.div>
-            </>
+          </>
         )}
       </AnimatePresence>
 
@@ -254,7 +301,8 @@ const Page = () => {
                 You don&apos;t have any habits yet
               </p>
               <p className="mt-1 text-sm text-gray-600 max-w-md">
-                Start by creating your first habit to begin tracking your progress.
+                Start by creating your first habit to begin tracking your
+                progress.
               </p>
               <div className="mt-4">
                 <AddHabitBtn onClick={() => setAddHabit(true)} />
@@ -262,8 +310,6 @@ const Page = () => {
             </div>
           ) : (
             habits.map((habit, habitIndex) => {
-              const adjustedMonth = currentMonth + 1;
-
               return (
                 <div
                   key={habitIndex}
@@ -309,7 +355,7 @@ const Page = () => {
                             (d) =>
                               d.date.year === currentYear &&
                               d.date.month === adjustedMonth &&
-                              d.date.day === day
+                              d.date.day === day,
                           );
 
                           const isDone = habitDate?.status === "done";
@@ -320,21 +366,22 @@ const Page = () => {
                           return (
                             <div
                               key={index}
-                              className={`relative flex-center p-1 border rounded-[10px] ${isToday
-                                ? "text-white bg-gradient cursor-pointer border-none"
-                                : isPastDate
-                                  ? "text-color-tertiary border-color-tertiary cursor-pointer"
-                                  : "text-black/50 border-gray-500/70 cursor-not-allowed"
-                                } ${!day && "invisible"}`}
-                                onClick={() => {
-                                  if (day > today) return;
-                                  setSelectedDay({
-                                    habitIndex,
-                                    day,
-                                    habitId: habit._id,
-                                    habitName: habit.habit_name,
-                                  });
-                                }}
+                              className={`relative flex-center p-1 border rounded-[10px] ${
+                                isToday
+                                  ? "text-white bg-gradient cursor-pointer border-none"
+                                  : isPastDate
+                                    ? "text-color-tertiary border-color-tertiary cursor-pointer"
+                                    : "text-black/50 border-gray-500/70 cursor-not-allowed"
+                              } ${!day && "invisible"}`}
+                              onClick={() => {
+                                if (day > today) return;
+                                setSelectedDay({
+                                  habitIndex,
+                                  day,
+                                  habitId: habit._id,
+                                  habitName: habit.habit_name,
+                                });
+                              }}
                             >
                               {day}
 
@@ -368,31 +415,33 @@ const Page = () => {
                         scrollContainerRefs.current[habitIndex] = el;
                       }}
                     >
-                      {daysForMonth.filter((day) => day).map((day) => {
-                        const habitDate = habit.dates.find(
-                          (d) =>
-                            d.date.year === currentYear &&
-                            d.date.month === adjustedMonth &&
-                            d.date.day === day
-                        );
+                      {daysForMonth
+                        .filter((day) => day)
+                        .map((day) => {
+                          const habitDate = habit.dates.find(
+                            (d) =>
+                              d.date.year === currentYear &&
+                              d.date.month === adjustedMonth &&
+                              d.date.day === day,
+                          );
 
-                        const isDone = habitDate?.status === "done";
-                        const isUndone = habitDate?.status === "undone";
-                        const isPastDate = day < today;
-                        const isToday = day === today;
+                          const isDone = habitDate?.status === "done";
+                          const isUndone = habitDate?.status === "undone";
+                          const isPastDate = day < today;
+                          const isToday = day === today;
 
-                        return (
-                          <div
-                            key={day}
-                            data-day={day}
-                            className={
-                              `relative shrink-0 flex items-center justify-center w-8 h-8 border rounded-lg
-                            ${isToday
+                          return (
+                            <div
+                              key={day}
+                              data-day={day}
+                              className={`relative shrink-0 flex items-center justify-center w-8 h-8 border rounded-lg
+                            ${
+                              isToday
                                 ? "text-white bg-gradient cursor-pointer border-none"
                                 : isPastDate
                                   ? "text-color-tertiary border-color-tertiary cursor-pointer"
                                   : "text-black/50 border-gray-500/70 cursor-not-allowed"
-                              }`}
+                            }`}
                               onClick={() => {
                                 if (day > today) return;
                                 setSelectedDay({
@@ -402,37 +451,37 @@ const Page = () => {
                                   habitName: habit.habit_name,
                                 });
                               }}
-                          >
-                            {day}
+                            >
+                              {day}
 
-                            <div className="absolute -top-2 -right-2 text-white rounded-full text-[.6em] flex-center">
-                              {habitDate ? (
-                                isDone ? (
-                                  <div className="flex-center p-px rounded-full bg-green-500">
-                                    <BsCheck size={16} />
-                                  </div>
-                                ) : (
-                                  isUndone && (
-                                    <div className="flex-center p-px rounded-full bg-red-500">
-                                      <BiX size={16} />
+                              <div className="absolute -top-2 -right-2 text-white rounded-full text-[.6em] flex-center">
+                                {habitDate ? (
+                                  isDone ? (
+                                    <div className="flex-center p-px rounded-full bg-green-500">
+                                      <BsCheck size={16} />
                                     </div>
+                                  ) : (
+                                    isUndone && (
+                                      <div className="flex-center p-px rounded-full bg-red-500">
+                                        <BiX size={16} />
+                                      </div>
+                                    )
                                   )
-                                )
-                              ) : day > today ? (
-                                <BiLock size={16} className="text-gray-400" />
-                              ) : null}
+                                ) : day > today ? (
+                                  <BiLock size={16} className="text-gray-400" />
+                                ) : null}
+                              </div>
                             </div>
-                          </div>
-                        );
-                      })}
+                          );
+                        })}
                     </div>
                   </div>
                 </div>
-              )
+              );
             })
           )}
         </div>
-      </div >
+      </div>
     </>
   );
 };
